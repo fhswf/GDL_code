@@ -8,6 +8,10 @@ from keras.utils import plot_model
 
 from utils.callbacks import CustomCallback, step_decay_schedule 
 
+# to make code run with TF 2.0:
+from tensorflow.python.framework.ops import disable_eager_execution
+disable_eager_execution()
+
 import numpy as np
 import json
 import os
@@ -149,7 +153,7 @@ class VariationalAutoencoder():
             kl_loss = vae_kl_loss(y_true, y_pred)
             return  r_loss + kl_loss
 
-        optimizer = Adam(lr=learning_rate)
+        optimizer = Adam(learning_rate=learning_rate)
         self.model.compile(optimizer=optimizer, loss = vae_loss,  metrics = [vae_r_loss, vae_kl_loss])
 
 
@@ -204,7 +208,9 @@ class VariationalAutoencoder():
 
 
 
-    def train_with_generator(self, data_flow, epochs, steps_per_epoch, run_folder, print_every_n_batches = 100, initial_epoch = 0, lr_decay = 1, ):
+    def train_with_generator(self, data_flow, epochs, steps_per_epoch, 
+                             run_folder, print_every_n_batches = 100, initial_epoch = 0, 
+                             lr_decay = 1, ):
 
         custom_callback = CustomCallback(run_folder, print_every_n_batches, initial_epoch, self)
         lr_sched = step_decay_schedule(initial_lr=self.learning_rate, decay_factor=lr_decay, step_size=1)
@@ -217,21 +223,56 @@ class VariationalAutoencoder():
 
         self.model.save_weights(os.path.join(run_folder, 'weights/weights.h5'))
                 
-        self.model.fit_generator(
+        #self.model.fit_generator(
+        #    data_flow
+        #    , shuffle = True
+        #    , epochs = epochs
+        #    , initial_epoch = initial_epoch
+        #    , callbacks = callbacks_list
+        #    , steps_per_epoch=steps_per_epoch 
+        #    )
+        
+        self.model.fit(
             data_flow
-            , shuffle = True
-            , epochs = epochs
-            , initial_epoch = initial_epoch
-            , callbacks = callbacks_list
             , steps_per_epoch=steps_per_epoch 
+            , epochs = epochs
+            , callbacks = callbacks_list
+            , shuffle = True
+            , initial_epoch = initial_epoch
             )
+        
+        #fit(
+        #     generator,
+        #     steps_per_epoch=steps_per_epoch,
+        #     epochs=epochs,
+        #     verbose=verbose,
+        #     callbacks=callbacks,
+        #     validation_data=validation_data,
+        #     validation_steps=validation_steps,
+        #     validation_freq=validation_freq,
+        #     class_weight=class_weight,
+        #     max_queue_size=max_queue_size,
+        #     workers=workers,
+        #     use_multiprocessing=use_multiprocessing,
+        #     shuffle=shuffle,
+        #     initial_epoch=initial_epoch,
+        # )
 
 
     
     def plot_model(self, run_folder):
-        plot_model(self.model, to_file=os.path.join(run_folder ,'viz/model.png'), show_shapes = True, show_layer_names = True)
-        plot_model(self.encoder, to_file=os.path.join(run_folder ,'viz/encoder.png'), show_shapes = True, show_layer_names = True)
-        plot_model(self.decoder, to_file=os.path.join(run_folder ,'viz/decoder.png'), show_shapes = True, show_layer_names = True)
+        plot_model(self.model, 
+                   to_file=os.path.join(run_folder ,'viz/model.png'), 
+                   show_shapes = True, 
+                   show_layer_names = True)
+        plot_model(self.encoder, 
+                   to_file=os.path.join(run_folder ,'viz/encoder.png'), 
+                   show_shapes = True, 
+                   show_layer_names = True)
+        plot_model(self.decoder, 
+                   to_file=os.path.join(run_folder ,'viz/decoder.png'), 
+                   show_shapes = True, 
+                   show_layer_names = True)
 
 
 
